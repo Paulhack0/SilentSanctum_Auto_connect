@@ -1,9 +1,8 @@
-import { DOCUMENT } from '@angular/common';
-import { Component, Inject, OnInit } from '@angular/core';
-import { AuthService } from '@auth0/auth0-angular';
-import { BackendConnectionService } from 'src/app/services/backend-connection.service';
-import { User } from '@auth0/auth0-spa-js';
+import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { AuthHybridService, HybridUser } from 'src/app/services/auth-hybrid.service';
+import { BackendConnectionService } from 'src/app/services/backend-connection.service';
+import { User } from '@auth0/auth0-angular';
 
 @Component({
   selector: 'app-home',
@@ -11,31 +10,31 @@ import { Router } from '@angular/router';
   styleUrls: ['./home.component.css'],
 })
 export class HomeComponent implements OnInit {
-  profileJson: any;
+  profileJson: User | HybridUser | null = null;
+
   constructor(
-    @Inject(DOCUMENT) public document: Document,
-    public auth: AuthService,
-    public backendService: BackendConnectionService,
+    public auth: AuthHybridService,
+    private backendService: BackendConnectionService,
     private router: Router
   ) {}
-  allPosts: any = null;
-  ngOnInit(): void {
-    // this.auth.user$.subscribe((profile) => {
-    //   console.log('profile from subs: ', profile);
-    //   this.profileJson = profile;
 
-    //   console.log('profile data: ', this.profileJson);
-    // });
-    this.router.navigateByUrl('/posts');
+  ngOnInit(): void {
     this.auth.user$.subscribe((profile) => {
-      // console.log("profile from subs login:", profile);
       this.profileJson = profile;
-      console.log('profile json:', this.profileJson);
-      this.backendService.login(profile).subscribe((response) => {
-        console.log('response: ', response);
-        localStorage.setItem('username', response.username);
-        localStorage.setItem('LoginId', response.loginId);
-      });
+      console.log('Profil:', profile);
+
+      if (profile) {
+        this.backendService.login(profile).subscribe((response) => {
+          console.log('Backend login response:', response);
+          localStorage.setItem('username', response.username);
+          localStorage.setItem('LoginId', response.loginId);
+        });
+      }
     });
   }
+
+  goToPosts() {
+    this.router.navigate(['/posts']);
+  }
 }
+
